@@ -21,6 +21,29 @@ def arithmetic_coding(data):
 
     return encoded_data
 
+def arithmetic_decoding(encoded_data, original_length, frequencies, precision):
+    decoded_text = []
+    low = 0.0
+    high = 1.0
+    range_size = high - low
+    value = encoded_data[0]
+
+    for _ in range(original_length):
+        for symbol, freq in frequencies.items():
+            symbol_low = low + range_size * sum(frequencies[c] for c in frequencies if c < symbol) / original_length
+            symbol_high = low + range_size * sum(frequencies[c] for c in frequencies if c <= symbol) / original_length
+
+            if symbol_low <= value < symbol_high:
+                decoded_text.append(symbol)
+                range_size = symbol_high - symbol_low
+                value = (value - symbol_low) / (symbol_high - symbol_low)
+                low = symbol_low
+                high = symbol_high
+                break
+
+    decoded_text = ''.join(decoded_text)
+    return decoded_text if precision is None else decoded_text[:precision]
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -41,6 +64,10 @@ class MainWindow(QWidget):
         encode_button.clicked.connect(self.encode_text)
         layout.addWidget(encode_button)
 
+        decode_button = QPushButton('Decode Text')
+        decode_button.clicked.connect(self.decode_text)
+        layout.addWidget(decode_button)
+
         self.result_label = QLabel()
         layout.addWidget(self.result_label)
 
@@ -60,6 +87,18 @@ class MainWindow(QWidget):
         text = self.text_edit.toPlainText()
         encoded_sequence = arithmetic_coding(text)
         self.result_label.setText(f"Encoded sequence: {encoded_sequence}")
+
+        self.encoded_data = encoded_sequence
+        self.original_length = len(text)
+        self.frequencies = dict(Counter(text))
+
+    def decode_text(self):
+        if hasattr(self, 'encoded_data') and hasattr(self, 'original_length') and hasattr(self, 'frequencies'):
+            precision = None  # Здесь можно установить точность декодирования
+            decoded_text = arithmetic_decoding(self.encoded_data, self.original_length, self.frequencies, precision)
+            self.result_label.setText(f"Decoded text: {decoded_text}")
+        else:
+            self.result_label.setText("Please encode text first.")
 
 def main():
     app = QApplication(sys.argv)
