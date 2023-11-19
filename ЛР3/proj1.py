@@ -1,4 +1,6 @@
 import pickle
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTextEdit, QVBoxLayout
 
 AlphPower = 2550
 FirstCode = 0
@@ -32,6 +34,7 @@ def init_model(inputFilename, outputFilename):
     for char_code in range(FirstCode, 2550):
         ents[char_code] = 1.0 * ents[char_code] / symbol_count
 
+    result_text = ''
     low = 0.0
     dict = {}
     for char_code in range(FirstCode, 2550):
@@ -39,12 +42,14 @@ def init_model(inputFilename, outputFilename):
             high = low + ents[char_code]
             dict[char_code] = (low, high)
             low = high
-            print(char_code)
-            print(dict[char_code])
+
+            result_text += f"{char_code}:\t{dict[char_code]}\n"
 
     model_file = open(outputFilename, 'wb')
     pickle.dump(dict, model_file)
     model_file.close()
+
+    return result_text
 
 
 def read_model(modelFilename):
@@ -124,12 +129,53 @@ def AriphDecoding(input_filename, range_to_char, outputfilename):
 
     output_file.close()
 
-init_model('in.txt', 'ents.txt')
-char_to_range = read_model('ents.txt')
-print(char_to_range)
 
-range_to_char = reverse_map(char_to_range)
-print(range_to_char)
 
-AriphCoding('in.txt', char_to_range, 'code.txt')
-AriphDecoding('code.txt', range_to_char, 'decode.txt')
+app = QApplication(sys.argv)
+
+window = QWidget()
+window.setWindowTitle('Лабораторная работа №3.1')
+window.setGeometry(100, 100, 600, 800)
+
+text_code = QTextEdit()
+text_decode = QTextEdit()
+btn_code = QPushButton('Закодировать')
+btn_decode = QPushButton('Декодировать')
+
+def code():
+    result_text = init_model('in.txt', 'ents.txt')
+    char_to_range = read_model('ents.txt')
+    #print(char_to_range)
+
+    range_to_char = reverse_map(char_to_range)
+    #print(range_to_char)
+
+    AriphCoding('in.txt', char_to_range, 'code.txt')
+    AriphDecoding('code.txt', range_to_char, 'decode.txt')
+
+    layout.addWidget(text_code)
+    text_code.setReadOnly(True)
+    text_code.setText(result_text)
+    layout.addWidget(btn_decode)
+    text_decode.hide()
+
+def decode():
+    layout.addWidget(text_decode)
+    text_decode.show()
+    text_decode.setReadOnly(True)    
+    input_file = open('decode.txt', 'r', encoding='utf-8')
+    input_text = input_file.read()
+    text_decode.setText(input_text)
+    input_file.close()
+
+btn_code.clicked.connect(code)
+btn_decode.clicked.connect(decode)
+
+layout = QVBoxLayout()
+layout.addWidget(btn_code)
+
+
+window.setLayout(layout)
+window.show()
+
+sys.exit(app.exec_())
