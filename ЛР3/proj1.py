@@ -6,9 +6,6 @@ AlphPower = 2550
 FirstCode = 0
 CodingLength = 5
 
-# forms an array of AlphPower elements
-# each of which stores the number of occurrences of the corresponding character in the file
-# returns a tuple of the number of characters and this array
 def count_file_symbols(filename):
     symbol_count = 0
     ents = [0] * AlphPower
@@ -23,11 +20,6 @@ def count_file_symbols(filename):
     input_file.close()
     return symbol_count, ents
 
-
-# calculates the probability of each symbol.
-# Saves it to a file (needed for decoding).
-# Stored as a dictionary. The file is binary,
-# and for writing and reading from it - the pickle module.
 def init_model(inputFilename, outputFilename):
     (symbol_count, ents) = count_file_symbols(inputFilename)
 
@@ -43,7 +35,7 @@ def init_model(inputFilename, outputFilename):
             dict[char_code] = (low, high)
             low = high
 
-            result_text += f"{char_code}:\t{dict[char_code]}\n"
+            result_text += f"{chr(char_code)}:\t{dict[char_code]}\n"
 
     model_file = open(outputFilename, 'wb')
     pickle.dump(dict, model_file)
